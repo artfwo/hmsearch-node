@@ -13,7 +13,7 @@
                 'cflags!': [ '-fno-exceptions', '-fno-rtti' ],
                 'cflags_cc!': [ '-fno-exceptions', '-fno-rtti' ],
                 'libraries': [
-                    '-lkyotocabinet',
+                    '-lkyotocabinet', '-lpqxx',
                 ],
             }],
         ],

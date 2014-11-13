@@ -1,3 +1,4 @@
-[submodule "hmsearch"]
+[submodule "hmsearch-postgres"]
 	path = hmsearch
 	url = https://github.com/commonsmachinery/hmsearch.git
+	branch = postgres

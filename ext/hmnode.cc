@@ -114,17 +114,15 @@ class OpenWorker : public NanAsyncWorker
 {
 public:
     OpenWorker(NanCallback *callback,
-               Handle<Value> path,
-               HmSearch::OpenMode mode)
+               Handle<Value> path)
         : NanAsyncWorker(callback)
         , _path(path)
-        , _mode(mode)
         , _db(NULL)
         { }
 
     void Execute() {
         std::string error_msg;
-        _db = HmSearch::open(*_path, _mode, &error_msg);
+        _db = HmSearch::open(*_path, &error_msg);
         if (!_db) {
             SetErrorMessage(error_msg.c_str());
         }
@@ -141,7 +139,6 @@ public:
 
 private:
     NanUtf8String _path;
-    HmSearch::OpenMode _mode;
     HmSearch* _db;
 };
 
@@ -717,21 +714,20 @@ static NAN_METHOD(open_sync)
 {
     NanScope();
 
-    if (args.Length() != 2) {
+    if (args.Length() != 1) {
         NanThrowTypeError("Wrong number of arguments");
         NanReturnUndefined();
     }
 
-    if (!args[0]->IsString() || !args[1]->IsNumber()) {
+    if (!args[0]->IsString()) {
         NanThrowTypeError("Wrong arguments");
         NanReturnUndefined();
     }
 
     NanUtf8String path(args[0]);
-    HmSearch::OpenMode mode = HmSearch::OpenMode(args[1]->IntegerValue());
     std::string error_msg;
 
-    HmSearch* db = HmSearch::open(*path, mode, &error_msg);
+    HmSearch* db = HmSearch::open(*path, &error_msg);
 
     if (db) {
         NanReturnValue(HmObject::create_with_db(db));
@@ -747,23 +743,22 @@ static NAN_METHOD(open_cb)
 {
     NanScope();
 
-    if (args.Length() != 3) {
+    if (args.Length() != 2) {
         NanThrowTypeError("Wrong number of arguments");
         NanReturnUndefined();
     }
 
-    if (!args[0]->IsString() || !args[1]->IsNumber() || !args[2]->IsFunction()) {
+    if (!args[0]->IsString() || !args[1]->IsFunction()) {
         NanThrowTypeError("Wrong arguments");
         NanReturnUndefined();
     }
 
-    Local<Function> callbackHandle = args[2].As<Function>();
+    Local<Function> callbackHandle = args[1].As<Function>();
 
     NanAsyncQueueWorker(
         new OpenWorker(
             new NanCallback(callbackHandle),
-            args[0],
-            HmSearch::OpenMode(args[1]->IntegerValue())));
+            args[0]));
 
     NanReturnUndefined();
 }
@@ -772,14 +767,6 @@ static NAN_METHOD(open_cb)
 
 void module_init(Handle<Object> exports) {
     HmObject::init();
-
-    exports->Set(NanNew<String>("READONLY"),
-                 NanNew<Integer>(HmSearch::READONLY),
-                 static_cast<PropertyAttribute>(ReadOnly|DontDelete));
-
-    exports->Set(NanNew<String>("READWRITE"),
-                 NanNew<Integer>(HmSearch::READWRITE),
-                 static_cast<PropertyAttribute>(ReadOnly|DontDelete));
 
     node::SetMethod(exports, "init", init_cb);
     node::SetMethod(exports, "initSync", init_sync);
